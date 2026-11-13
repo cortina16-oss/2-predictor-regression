@@ -104,6 +104,9 @@ td.v1{color:var(--x1);font-weight:600} td.v2{color:var(--x2);font-weight:600} td
 .defs{margin:14px 0 0;font-size:13.5px;line-height:1.5;color:var(--muted)}
 .defs dt{font-weight:600;color:var(--ink);margin-top:8px}
 .defs dd{margin:2px 0 0}
+.prose{font-size:14px;margin:0 0 4px}
+.vifnow{margin:14px 0 0;padding:8px 12px;background:var(--bg);border-left:3px solid var(--rule);border-radius:0 6px 6px 0;font-size:14px}
+.vifnow.hi{border-left-color:var(--bad)}
 .notice{margin:12px 0 0;padding:0;list-style:none;font-size:14px}
 .notice li{padding:6px 0 6px 12px;border-left:3px solid var(--y);margin-bottom:6px}
 .sig{color:var(--y);font-weight:600}
@@ -194,10 +197,21 @@ td.v1{color:var(--x1);font-weight:600} td.v2{color:var(--x2);font-weight:600} td
           <dd>The proportion of variance in <span class="nm2"></span> that the two predictors account for together. It equals 1 minus the ratio of the sum of squared prediction errors to the total sum of squares of <span class="nm2"></span>.</dd>
           <dt>Adjusted R²</dt>
           <dd>Sample R² overstates how well the predictors would do in the population, because the weights are chosen to fit this particular sample as closely as possible. Adjusted R² corrects for this bias (Wherry, 1931): 1 − (1 − R²)(n − 1)/(n − k − 1), where k is the number of predictors (here, 2). The correction shrinks as n grows, so try a small n to see the gap widen.</dd>
-          <dt>VIF</dt>
-          <dd>The variance inflation factor shows how much the correlation between the predictors inflates the sampling variance of each weight, relative to what it would be if the predictors were uncorrelated. With two predictors it equals 1/(1 − r²), where r is r(<span class="nm0"></span>, <span class="nm1"></span>), so it is the same for both predictors. The standard errors are inflated by a factor of √VIF.</dd>
         </dl>
         <ul class="notice" id="notice"></ul>
+      </section>
+      <section class="panel">
+        <h2>Multicollinearity</h2>
+        <p class="prose">When the predictors are highly correlated with each other, two problems arise.</p>
+        <dl class="defs">
+          <dt>Interpretation of the weights</dt>
+          <dd>Each weight describes the change in <span class="nm2"></span> when one predictor changes and the other is held constant. When the predictors move together, that situation rarely occurs, so the weight describes a change about which the data say little. Each weight also rests only on the unique part of its predictor, and that part shrinks as the predictors overlap. As a result, weights can be much smaller than the zero-order correlations, can take the opposite sign, and can swing sharply with small changes in the correlations. Drag r(<span class="nm0"></span>, <span class="nm1"></span>) toward ±1 and watch the weights change.</dd>
+          <dt>Large standard errors</dt>
+          <dd>The more the predictors overlap, the less unique information the data contain about each one, so the weights vary more from sample to sample. Standard errors grow, confidence intervals widen, and tests of the individual weights lose power. The model as a whole can be significant even when neither weight is. Turn off “Sample matches settings exactly” and draw new samples to see how much the weights vary.</dd>
+          <dt>Variance inflation factor (VIF)</dt>
+          <dd>The VIF shows how much the overlap among predictors inflates the sampling variance of a weight, relative to what it would be if that predictor were uncorrelated with the others. In general, VIF = 1/(1 − R²<sub>j</sub>), where R²<sub>j</sub> comes from regressing predictor j on the other predictors. With two predictors this reduces to 1/(1 − r²), where r is r(<span class="nm0"></span>, <span class="nm1"></span>), so both predictors have the same VIF. Standard errors are inflated by a factor of √VIF. Conventional cutoffs treat a VIF above 10, or more conservatively above 5, as a sign of a problem. With two predictors these cutoffs correspond to correlations of about .95 and .89. They are rules of thumb rather than points where trouble suddenly begins: the cost of overlap rises gradually and also depends on sample size.</dd>
+        </dl>
+        <p class="vifnow" id="vifNow"></p>
       </section>
       <section class="panel">
         <h2>Sample descriptives</h2>
@@ -436,7 +450,6 @@ function renderTables(A,P){
   $('#tS').innerHTML=`<thead><tr><th>Predictor</th><th>β</th><th>SE(β)</th><th>β you set</th><th>r with ${n[2]}</th><th>sr</th><th>sr²</th><th>pr</th></tr></thead><tbody>
    ${[0,1].map(i=>`<tr><td class="${cls[i]}">${n[i]}</td><td>${fs(A.beta[i])}</td><td>${fs(A.bse[i])}</td><td>${fs(i?P.B2:P.B1)}</td><td>${fs(A.r[i][2])}</td><td>${fs(A.sr[i])}</td><td>${fs(A.sr[i]**2)}</td><td>${fs(A.pr[i])}</td></tr>`).join('')}
   </tbody>`;
-  const shared=A.R2-A.sr[0]**2-A.sr[1]**2;
   $('#tM').innerHTML=`<thead><tr><th>Statistic</th><th>This sample</th><th>You set</th></tr></thead><tbody>
    <tr><td>R</td><td>${fs(Math.sqrt(Math.max(0,A.R2)))}</td><td>${fs(Math.sqrt(Math.max(0,P.R2)))}</td></tr>
    <tr><td>R²</td><td>${fs(A.R2)}</td><td>${fs(P.R2)}</td></tr>
@@ -444,8 +457,6 @@ function renderTables(A,P){
    <tr><td>F(2, ${A.df})</td><td>${f(A.F,2)}</td><td></td></tr>
    <tr><td>p (model)</td><td class="${A.pF<.05?'sig':''}">${fp(A.pF)}</td><td></td></tr>
    <tr><td>Std. error of estimate</td><td>${f(A.see)}</td><td>${f(S.s[2]*Math.sqrt(Math.max(0,1-P.R2)))}</td></tr>
-   <tr><td>Shared (non-unique) R²</td><td>${fs(shared)}</td><td></td></tr>
-   <tr><td>VIF (both predictors)</td><td>${f(A.vif,2)}</td><td>${f(1/(1-S.r.r12**2),2)}</td></tr>
   </tbody>`;
   // things worth noticing
   const notes=[];
@@ -455,9 +466,15 @@ function renderTables(A,P){
     else if(Math.abs(B)>Math.abs(r)+0.02) notes.push(`<b>${n[i]}</b>'s β (${fs(B,2)}) is larger than its correlation with ${n[2]} (${fs(r,2)}). ${n[1-i]} is suppressing irrelevant variance in ${n[i]}.`);
   }
   if(Math.abs(P.R2-(S.r.r1y**2+S.r.r2y**2))<0.005 && Math.abs(S.r.r12)<0.005) notes.push(`With uncorrelated predictors, each β equals its correlation with ${n[2]} and R² is the sum of the squared correlations.`);
-  if(1/(1-S.r.r12**2)>5) notes.push(`The predictors are highly correlated (VIF ${f(1/(1-S.r.r12**2),1)}), so the SEs of the coefficients are inflated. Watch how they widen as r(${n[0]}, ${n[1]}) approaches ±1.`);
-  if(shared<-0.01) notes.push(`Shared R² is negative: the predictors together explain more than the sum of their unique parts, another sign of suppression.`);
   $('#notice').innerHTML=notes.map(t=>`<li>${t}</li>`).join('');
+  // multicollinearity, current settings
+  const vifCut=A.vif>10?' This is above both conventional cutoffs.':A.vif>5?' This is above the more conservative cutoff of 5.':'';
+  $('#vifNow').className='vifnow'+(A.vif>5?' hi':'');
+  $('#vifNow').innerHTML=`With the current data, r(${n[0]}, ${n[1]}) = ${fs(A.r[0][1],2)}, so VIF = ${f(A.vif,2)} and the standard errors are ${f(Math.sqrt(A.vif),2)} times as large as they would be with uncorrelated predictors.${vifCut}`;
+  // descriptives
+  $('#tD').innerHTML=`<thead><tr><th>Variable</th><th>Mean</th><th>SD</th>${[0,1,2].map(j=>`<th>${n[j]}</th>`).join('')}</tr></thead><tbody>
+   ${[0,1,2].map(i=>`<tr><td class="${cls[i]}">${n[i]}</td><td>${f(A.mean[i],2)}</td><td>${f(A.sd[i],2)}</td>${[0,1,2].map(j=>`<td>${j<i?fs(A.r[i][j]):j===i?'—':''}</td>`).join('')}</tr>`).join('')}
+  </tbody>`;
   // equations
   const sg=v=>(v<0?' − ':' + ')+f(Math.abs(v));
   const sgs=v=>(v<0?' − ':' + ')+fs(Math.abs(v));
