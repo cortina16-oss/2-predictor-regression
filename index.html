@@ -82,6 +82,7 @@ button.btn[aria-pressed="true"]{background:var(--ink);color:var(--panel);border-
 .seg button{border:0;border-radius:0;background:transparent}
 .seg button + button{border-left:1px solid var(--rule)}
 #plot{width:100%;height:clamp(380px,62vh,640px)}
+.linekey{font-size:13px;color:var(--muted);margin:2px 0 8px;max-width:80ch}
 .views{display:flex;flex-wrap:wrap;gap:6px}
 .eq{font:500 16px/1.7 var(--serif);margin:10px 0 0;overflow-x:auto;white-space:nowrap}
 .eq .eqnote{font:14px/1.5 var(--sans);color:var(--muted);white-space:normal;max-width:72ch;margin:0 0 8px 118px}
@@ -161,11 +162,13 @@ td.v1{color:var(--x1);font-weight:600} td.v2{color:var(--x2);font-weight:600} td
         </div>
         <div class="toggles">
           <label><input type="checkbox" id="showPlane" checked> Regression plane</label>
+          <label><input type="checkbox" id="showLines"> Slope lines</label>
           <label><input type="checkbox" id="showResid"> Residuals</label>
           <label><input type="checkbox" id="ortho"> Orthographic</label>
         </div>
       </div>
       <div id="plot"></div>
+      <p class="linekey" id="lineKey" hidden>Solid lines lie on the plane and show each predictor's weight with the other predictor held constant. Dashed lines show each predictor's simple regression slope, ignoring the other predictor. <span style="color:var(--x1);font-weight:600" class="nm0"></span> lines are teal; <span style="color:var(--x2);font-weight:600" class="nm1"></span> lines are amber.</p>
       <div class="views" role="group" aria-label="Camera">
         <button class="btn" data-view="default">Angled view</button>
         <button class="btn" data-view="x1">Look at <span class="nm0"></span> vs <span class="nm2"></span></button>
@@ -205,7 +208,7 @@ td.v1{color:var(--x1);font-weight:600} td.v2{color:var(--x2);font-weight:600} td
         <p class="prose">When the predictors are highly correlated with each other, two problems arise.</p>
         <dl class="defs">
           <dt>Interpretation of the weights</dt>
-          <dd>Each weight describes how much <span class="nm2"></span> differs between cases that differ on one predictor but have the same value on the other. When the predictors are highly correlated, the data contain few such cases, so the weight describes a comparison about which the data say little. Each weight also rests only on the unique part of its predictor, and that part shrinks as the predictors overlap. As a result, weights can be much smaller than the zero-order correlations, can take the opposite sign, and can swing sharply with small changes in the correlations. Drag r(<span class="nm0"></span>, <span class="nm1"></span>) toward ±1 and watch the weights change.</dd>
+          <dd>Each weight describes how much <span class="nm2"></span> differs between cases that differ on one predictor but have the same value on the other. When the predictors are highly correlated, the data contain few such cases, so the weight describes a comparison about which the data say little. Each weight also rests only on the unique part of its predictor, and that part shrinks as the predictors overlap. As a result, weights can be much smaller than the zero-order correlations, can take the opposite sign, and can swing sharply with small changes in the correlations. To see this in the scatterplot, turn on “Slope lines,” check “Orthographic,” and click “Look at <span class="nm1"></span> vs <span class="nm2"></span>.” The dashed amber line is the simple regression of <span class="nm2"></span> on <span class="nm1"></span>. The solid amber line lies on the plane and shows the weight for <span class="nm1"></span> with <span class="nm0"></span> held constant. With the default settings, raising r(<span class="nm0"></span>, <span class="nm1"></span>) to .83 tips the solid line slightly downward while the dashed line still rises. Raise r(<span class="nm0"></span>, <span class="nm1"></span>) to .90 or .95 and the contrast becomes hard to miss.</dd>
           <dt>Large standard errors</dt>
           <dd>The more the predictors overlap, the less unique information the data contain about each one, so the weights vary more from sample to sample. Standard errors grow, confidence intervals widen, and tests of the individual weights lose power. The model as a whole can be significant even when neither weight is. Turn off “Sample matches settings exactly” and draw new samples to see how much the weights vary.</dd>
           <dt>Variance inflation factor (VIF)</dt>
@@ -231,7 +234,7 @@ const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>'
 const S = {
   names:['X1','X2','Y'], m:[50,100,20], s:[10,15,5],
   r:{r12:.30, r1y:.50, r2y:.40},
-  n:200, exact:true, seed:7, view:'raw', plane:true, resid:false, ortho:false
+  n:200, exact:true, seed:7, view:'raw', plane:true, resid:false, ortho:false, lines:false
 };
 const PAIRS = {r12:[0,1], r1y:[0,2], r2y:[1,2]};
 const VCOL = ['--x1','--x2','--y'];
@@ -507,6 +510,18 @@ function renderPlot(d,A){
     traces.push({type:'surface',x:xs,y:ys,z:zz,showscale:false,opacity:0.38,colorscale:[[0,cy],[1,cy]],
       name:'Fitted plane',hoverinfo:'skip',contours:{x:{show:true,color:panel,width:1},y:{show:true,color:panel,width:1}},lighting:{ambient:0.9,diffuse:0.2,specular:0.05}});
   }
+  if(S.lines){
+    const mn=a=>a.reduce((m,v)=>v<m?v:m,Infinity), mx=a=>a.reduce((m,v)=>v>m?v:m,-Infinity);
+    const m1=z?0:A.mean[0], m2=z?0:A.mean[1], my=z?0:A.mean[2];
+    const [p0,p1,p2]= z?[0,A.beta[0],A.beta[1]]:[A.coef[0].b,A.coef[1].b,A.coef[2].b];
+    const s1=z?A.r[0][2]:A.r[0][2]*A.sd[2]/A.sd[0], s2=z?A.r[1][2]:A.r[1][2]*A.sd[2]/A.sd[1];
+    const u=[mn(X),mx(X)], w=[mn(Y2),mx(Y2)];
+    const ln=(x,y,zz,col,dash,nm)=>({type:'scatter3d',mode:'lines',x,y,z:zz,line:{color:col,width:dash?5:8,dash:dash?'dash':'solid'},hoverinfo:'skip',name:nm});
+    traces.push(ln(u,[m2,m2],u.map(v=>p0+p1*v+p2*m2),c1,false,'Partial slope 1'));
+    traces.push(ln([m1,m1],w,w.map(v=>p0+p1*m1+p2*v),c2,false,'Partial slope 2'));
+    traces.push(ln(u,[m2,m2],u.map(v=>my+s1*(v-m1)),c1,true,'Simple slope 1'));
+    traces.push(ln([m1,m1],w,w.map(v=>my+s2*(v-m2)),c2,true,'Simple slope 2'));
+  }
   if(S.resid){
     const lx=[],ly=[],lz=[];
     for(let i=0;i<X.length;i++){lx.push(X[i],X[i],null);ly.push(Y2[i],Y2[i],null);lz.push(Yv[i],yh[i],null);}
@@ -563,6 +578,7 @@ $('#exact').addEventListener('change',e=>{S.exact=e.target.checked;update();});
 $('#resample').addEventListener('click',()=>{S.seed++;update();});
 $('#showPlane').addEventListener('change',e=>{S.plane=e.target.checked;update();});
 $('#showResid').addEventListener('change',e=>{S.resid=e.target.checked;update();});
+$('#showLines').addEventListener('change',e=>{S.lines=e.target.checked;$('#lineKey').hidden=!S.lines;update();});
 $('#ortho').addEventListener('change',e=>{S.ortho=e.target.checked;update();});
 const setView=v=>{S.view=v;$('#vRaw').setAttribute('aria-pressed',v==='raw');$('#vZ').setAttribute('aria-pressed',v==='z');update();};
 $('#vRaw').addEventListener('click',()=>setView('raw'));
