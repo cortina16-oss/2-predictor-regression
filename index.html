@@ -449,7 +449,8 @@ function renderTables(A,P){
   const sg=v=>(v<0?' − ':' + ')+f(Math.abs(v));
   const sgs=v=>(v<0?' − ':' + ')+fs(Math.abs(v));
   $('#eq').innerHTML=`<div><span class="lab">Unstandardized</span><span class="hat"><i>${n[2]}</i></span> = ${f(c[0].b)}${sg(c[1].b)}·<i>${n[0]}</i>${sg(c[2].b)}·<i>${n[1]}</i></div>
-   <p class="eqnote">Just as the simple regression equation locates the line of best fit in the two-dimensional data, the 2-predictor equation locates the <i>surface</i> of best fit in the three-dimensional data.</p>
+   <p class="eqnote">Just as the simple regression equation locates the line of best fit in the two-dimensional data, the 2-predictor equation locates the <i>surface</i> of best fit in the three-dimensional data. This is the plane that best fits the data, that is, the flat plane that produces the smallest prediction errors.</p>
+   <p class="eqnote">The weights in the multiple regression equation are still rate of change values, but they are now "partial". This means that they give rate of change with the other predictor(s) held constant. So, ${fs(Math.abs(c[1].b))} is interpreted as follows: For every single point increase in ${n[0]}, we expect a ${fs(Math.abs(c[1].b))} ${c[1].b<0?'decrease':'increase'} in ${n[2]} holding ${n[1]} constant.</p>
    <div><span class="lab">Standardized</span><span class="hat"><i>z</i></span><sub>${n[2]}</sub> = ${fs(A.beta[0])}·<i>z</i><sub>${n[0]}</sub>${sgs(A.beta[1])}·<i>z</i><sub>${n[1]}</sub></div>`;
 }
 
