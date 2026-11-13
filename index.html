@@ -101,6 +101,9 @@ tbody tr + tr td{border-top:1px solid var(--soft)}
 td.v1{color:var(--x1);font-weight:600} td.v2{color:var(--x2);font-weight:600} td.vy{color:var(--y);font-weight:600}
 .note{font-size:13.5px;color:var(--muted);margin:10px 0 0}
 .note b{color:var(--ink);font-weight:600}
+.defs{margin:14px 0 0;font-size:13.5px;line-height:1.5;color:var(--muted)}
+.defs dt{font-weight:600;color:var(--ink);margin-top:8px}
+.defs dd{margin:2px 0 0}
 .notice{margin:12px 0 0;padding:0;list-style:none;font-size:14px}
 .notice li{padding:6px 0 6px 12px;border-left:3px solid var(--y);margin-bottom:6px}
 .sig{color:var(--y);font-weight:600}
@@ -184,6 +187,16 @@ td.v1{color:var(--x1);font-weight:600} td.v2{color:var(--x2);font-weight:600} td
       <section class="panel">
         <h2>Model fit</h2>
         <div class="tbl"><table id="tM"></table></div>
+        <dl class="defs">
+          <dt>R</dt>
+          <dd>The multiple correlation: the correlation between <span class="nm2"></span> and the values of <span class="nm2"></span> predicted by the regression plane. It ranges from 0 to 1.</dd>
+          <dt>R²</dt>
+          <dd>The proportion of variance in <span class="nm2"></span> that the two predictors account for together. It equals 1 minus the ratio of the sum of squared prediction errors to the total sum of squares of <span class="nm2"></span>.</dd>
+          <dt>Adjusted R²</dt>
+          <dd>Sample R² overstates how well the predictors would do in the population, because the weights are chosen to fit this particular sample as closely as possible. Adjusted R² corrects for this bias: 1 − (1 − R²)(n − 1)/(n − k − 1), where k is the number of predictors (here, 2). The correction shrinks as n grows, so try a small n to see the gap widen.</dd>
+          <dt>VIF</dt>
+          <dd>The variance inflation factor shows how much the correlation between the predictors inflates the sampling variance of each weight, relative to what it would be if the predictors were uncorrelated. With two predictors it equals 1/(1 − r²), where r is r(<span class="nm0"></span>, <span class="nm1"></span>), so it is the same for both predictors. The standard errors are inflated by a factor of √VIF.</dd>
+        </dl>
         <ul class="notice" id="notice"></ul>
       </section>
       <section class="panel">
