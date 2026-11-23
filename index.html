@@ -447,9 +447,9 @@ function update(){
 }
 function renderTables(A,P){
   const n=S.names.map(esc), c=A.coef;
-  $('#tU').innerHTML=`<thead><tr><th>Term</th><th>b</th><th>SE</th><th>t</th><th>p</th><th>95% CI</th><th>b you set</th></tr></thead><tbody>
-   <tr><td>Intercept</td><td>${f(c[0].b)}</td><td>${f(c[0].se)}</td><td>${f(c[0].t,2)}</td><td>${fp(c[0].p)}</td><td>[${f(c[0].lo,2)}, ${f(c[0].hi,2)}]</td><td>${f(P.b0)}</td></tr>
-   ${[1,2].map(i=>`<tr><td class="${cls[i-1]}">${n[i-1]}</td><td>${f(c[i].b)}</td><td>${f(c[i].se)}</td><td>${f(c[i].t,2)}</td><td class="${c[i].p<.05?'sig':''}">${fp(c[i].p)}</td><td>[${f(c[i].lo,2)}, ${f(c[i].hi,2)}]</td><td>${f(i===1?P.b1:P.b2)}</td></tr>`).join('')}
+  $('#tU').innerHTML=`<thead><tr><th>Term</th><th>b</th><th>SE</th><th>t</th><th>p</th><th>95% CI</th></tr></thead><tbody>
+   <tr><td>Intercept</td><td>${f(c[0].b)}</td><td>${f(c[0].se)}</td><td>${f(c[0].t,2)}</td><td>${fp(c[0].p)}</td><td>[${f(c[0].lo,2)}, ${f(c[0].hi,2)}]</td></tr>
+   ${[1,2].map(i=>`<tr><td class="${cls[i-1]}">${n[i-1]}</td><td>${f(c[i].b)}</td><td>${f(c[i].se)}</td><td>${f(c[i].t,2)}</td><td class="${c[i].p<.05?'sig':''}">${fp(c[i].p)}</td><td>[${f(c[i].lo,2)}, ${f(c[i].hi,2)}]</td></tr>`).join('')}
   </tbody>`;
   $('#noteU').innerHTML=`Each b is the change in <b>${n[2]}</b> for a one-unit change in that predictor, holding the other constant. df = ${A.df}.`;
   $('#tS').innerHTML=`<thead><tr><th>Predictor</th><th>β</th><th>SE(β)</th><th>β you set</th><th>r with ${n[2]}</th><th>sr</th><th>sr²</th><th>pr</th></tr></thead><tbody>
