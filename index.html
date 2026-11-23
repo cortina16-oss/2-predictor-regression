@@ -189,7 +189,7 @@ td.v1{color:var(--x1);font-weight:600} td.v2{color:var(--x2);font-weight:600} td
       <section class="panel">
         <h2>Standardized coefficients</h2>
         <div class="tbl"><table id="tS"></table></div>
-        <p class="note">β is from this sample; “β you set” is the value implied by your correlation settings. sr is the semipartial correlation (sr² = unique share of variance in <span class="nm2"></span>); pr is the partial correlation.</p>
+        <p class="note">sr is the semipartial correlation (sr² = unique share of variance in <span class="nm2"></span>); pr is the partial correlation.</p>
       </section>
       <section class="panel">
         <h2>Model fit</h2>
@@ -452,25 +452,25 @@ function renderTables(A,P){
    ${[1,2].map(i=>`<tr><td class="${cls[i-1]}">${n[i-1]}</td><td>${f(c[i].b)}</td><td>${f(c[i].se)}</td><td>${f(c[i].t,2)}</td><td class="${c[i].p<.05?'sig':''}">${fp(c[i].p)}</td><td>[${f(c[i].lo,2)}, ${f(c[i].hi,2)}]</td></tr>`).join('')}
   </tbody>`;
   $('#noteU').innerHTML=`Each b is the change in <b>${n[2]}</b> for a one-unit change in that predictor, holding the other constant. df = ${A.df}.`;
-  $('#tS').innerHTML=`<thead><tr><th>Predictor</th><th>β</th><th>SE(β)</th><th>β you set</th><th>r with ${n[2]}</th><th>sr</th><th>sr²</th><th>pr</th></tr></thead><tbody>
-   ${[0,1].map(i=>`<tr><td class="${cls[i]}">${n[i]}</td><td>${fs(A.beta[i])}</td><td>${fs(A.bse[i])}</td><td>${fs(i?P.B2:P.B1)}</td><td>${fs(A.r[i][2])}</td><td>${fs(A.sr[i])}</td><td>${fs(A.sr[i]**2)}</td><td>${fs(A.pr[i])}</td></tr>`).join('')}
+  $('#tS').innerHTML=`<thead><tr><th>Predictor</th><th>β</th><th>SE(β)</th><th>r with ${n[2]}</th><th>sr</th><th>sr²</th><th>pr</th></tr></thead><tbody>
+   ${[0,1].map(i=>`<tr><td class="${cls[i]}">${n[i]}</td><td>${fs(A.beta[i])}</td><td>${fs(A.bse[i])}</td><td>${fs(A.r[i][2])}</td><td>${fs(A.sr[i])}</td><td>${fs(A.sr[i]**2)}</td><td>${fs(A.pr[i])}</td></tr>`).join('')}
   </tbody>`;
-  $('#tM').innerHTML=`<thead><tr><th>Statistic</th><th>This sample</th><th>You set</th></tr></thead><tbody>
-   <tr><td>R</td><td>${fs(Math.sqrt(Math.max(0,A.R2)))}</td><td>${fs(Math.sqrt(Math.max(0,P.R2)))}</td></tr>
-   <tr><td>R²</td><td>${fs(A.R2)}</td><td>${fs(P.R2)}</td></tr>
-   <tr><td>Adjusted R²</td><td>${fs(A.adj)}</td><td></td></tr>
-   <tr><td>F(2, ${A.df})</td><td>${f(A.F,2)}</td><td></td></tr>
-   <tr><td>p (model)</td><td class="${A.pF<.05?'sig':''}">${fp(A.pF)}</td><td></td></tr>
-   <tr><td>Std. error of estimate</td><td>${f(A.see)}</td><td>${f(S.s[2]*Math.sqrt(Math.max(0,1-P.R2)))}</td></tr>
+  $('#tM').innerHTML=`<thead><tr><th>Statistic</th><th>Value</th></tr></thead><tbody>
+   <tr><td>R</td><td>${fs(Math.sqrt(Math.max(0,A.R2)))}</td></tr>
+   <tr><td>R²</td><td>${fs(A.R2)}</td></tr>
+   <tr><td>Adjusted R²</td><td>${fs(A.adj)}</td></tr>
+   <tr><td>F(2, ${A.df})</td><td>${f(A.F,2)}</td></tr>
+   <tr><td>p (model)</td><td class="${A.pF<.05?'sig':''}">${fp(A.pF)}</td></tr>
+   <tr><td>Std. error of estimate</td><td>${f(A.see)}</td></tr>
   </tbody>`;
   // things worth noticing
   const notes=[];
   for(const i of [0,1]){
-    const B=i?P.B2:P.B1, r=getR(i,2);
+    const B=A.beta[i], r=A.r[i][2];
     if(Math.abs(B)>0.02 && Math.sign(B)!==Math.sign(r)&&Math.abs(r)>0.005) notes.push(`<b>${n[i]}</b>'s β (${fs(B,2)}) has the opposite sign to its correlation with ${n[2]} (${fs(r,2)}). This is net suppression: once ${n[1-i]} is held constant, the relationship reverses.`);
     else if(Math.abs(B)>Math.abs(r)+0.02) notes.push(`<b>${n[i]}</b>'s β (${fs(B,2)}) is larger than its correlation with ${n[2]} (${fs(r,2)}). ${n[1-i]} is suppressing irrelevant variance in ${n[i]}.`);
   }
-  if(Math.abs(P.R2-(S.r.r1y**2+S.r.r2y**2))<0.005 && Math.abs(S.r.r12)<0.005) notes.push(`With uncorrelated predictors, each β equals its correlation with ${n[2]} and R² is the sum of the squared correlations.`);
+  if(Math.abs(A.r[0][1])<0.005) notes.push(`With uncorrelated predictors, each β equals its correlation with ${n[2]} and R² is the sum of the squared correlations.`);
   $('#notice').innerHTML=notes.map(t=>`<li>${t}</li>`).join('');
   // multicollinearity, current settings
   const vifCut=A.vif>10?' This is above both conventional cutoffs.':A.vif>5?' This is above the more conservative cutoff of 5.':'';
